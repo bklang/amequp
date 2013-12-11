@@ -1,8 +1,8 @@
 module Amequp
   class << self
     def method_missing(m, *args, &blk)
-      if Amequp::Plugin::Service.connection && Amequp::Plugin::Service.connection.respond_to?(m)
-        Amequp::Plugin::Service.connection.send m, *args, &blk
+      if Amequp::Plugin.connection && Amequp::Plugin.connection.respond_to?(m)
+        Amequp::Plugin.connection.send m, *args, &blk
       else
         super
       end
