@@ -47,7 +47,7 @@ class Amequp::Plugin::Service
       end
 
       Adhearsion::Events.amqp_connected do
-        logger.info "Amequp connected to server at #{params[:host]}:#{params[:port]}"
+        logger.info "Amequp connected to server at #{params[:hostname]}:#{params[:port]}"
         latch.countdown!
       end
 
