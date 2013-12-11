@@ -25,8 +25,7 @@ class Amequp::Plugin::Service
         params[:port] = uri.port || params[:port]
       end
 
-      @@connection = establish_connection params
-      @@connection.run
+      establish_connection params
     end
 
     ##
@@ -51,10 +50,8 @@ class Amequp::Plugin::Service
         latch.countdown!
       end
 
-      EM.run do
-        connection = ::AMQP.connect params[:uri]
-        channel = ::AMQP::Channel.new connection
-        Adhearsion::Events.trigger :amqp_connected
+      Adhearsion::Process.important_threads << Thread.new do
+        catching_standard_errors { main_em_loop }
       end
 
       latch.wait
@@ -69,6 +66,14 @@ class Amequp::Plugin::Service
       logger.fatal "AMQP connection failed. Going down."
       Adhearsion::Process.stop!
       raise e
+    end
+
+    def main_em_loop
+      EM.run do
+        @@connection = ::AMQP::Channel.new ::AMQP.connect params[:uri]
+        @@connection.run
+        Adhearsion::Events.trigger :amqp_connected
+      end
     end
   end # class << self
 end # Service
