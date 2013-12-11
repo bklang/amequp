@@ -1,4 +1,5 @@
 module Amequp
+  mattr_accessor :connection
 end
 
 require "amequp/version"
