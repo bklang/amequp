@@ -55,8 +55,6 @@ class Amequp::Plugin::Service
       end
 
       latch.wait
-
-      channel
     rescue => e
       # TODO: Graceful reconnections
       # We only care about disconnects if the process is up or booting
