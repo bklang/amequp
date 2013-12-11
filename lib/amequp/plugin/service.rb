@@ -1,5 +1,6 @@
 require 'uri'
 require 'cgi'
+require 'countdownlatch'
 
 # FIXME: Can we share the logger object into AMQP?
 AMQP.logging = true
@@ -39,8 +40,7 @@ class Amequp::Plugin::Service
     #
     # @param params [Hash] Options to establish the Redis connection
     def establish_connection(params)
-      m = Mutex.new
-      blocker = ConditionVariable.new
+      latch = CountDownLatch.new 1
 
       Adhearsion::Events.shutdown do
         stop
@@ -48,7 +48,7 @@ class Amequp::Plugin::Service
 
       Adhearsion::Events.amqp_connected do
         logger.info "Amequp connected to server at #{params[:host]}:#{params[:port]}"
-        m.synchronize { blocker.broadcast }
+        latch.countdown!
       end
 
       EM.run do
@@ -57,7 +57,7 @@ class Amequp::Plugin::Service
         Adhearsion::Events.trigger :amqp_connected
       end
 
-      m.synchronize { blocker.wait m }
+      latch.wait
 
       channel
     rescue => e
