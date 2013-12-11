@@ -71,7 +71,6 @@ class Amequp::Plugin::Service
     def main_em_loop(params)
       EM.run do
         @@connection = ::AMQP::Channel.new ::AMQP.connect params[:uri]
-        @@connection.run
         Adhearsion::Events.trigger :amqp_connected
       end
     end
