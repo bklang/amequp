@@ -51,7 +51,7 @@ class Amequp::Plugin::Service
       end
 
       Adhearsion::Process.important_threads << Thread.new do
-        catching_standard_errors { main_em_loop }
+        catching_standard_errors { main_em_loop params }
       end
 
       latch.wait
@@ -68,7 +68,7 @@ class Amequp::Plugin::Service
       raise e
     end
 
-    def main_em_loop
+    def main_em_loop(params)
       EM.run do
         @@connection = ::AMQP::Channel.new ::AMQP.connect params[:uri]
         @@connection.run
