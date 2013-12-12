@@ -1,6 +1,8 @@
 require 'amqp'
 require 'countdownlatch'
 
+AMQP.logging = true
+
 class Amequp::Plugin < Adhearsion::Plugin
   attr_reader :connection
 
