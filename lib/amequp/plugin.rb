@@ -77,10 +77,8 @@ class Amequp::Plugin < Adhearsion::Plugin
 
   def main_em_loop(params)
     EM.run do
-      ::AMQP.connect(params[:uri]) do |connection|
-        Amequp.connection = @connection = connection
-        Adhearsion::Events.trigger :amqp_connected
-      end
+      Amequp.connection = @connection = ::AMQP.connect(params[:uri])
+      Adhearsion::Events.trigger :amqp_connected
     end
   end
 end
