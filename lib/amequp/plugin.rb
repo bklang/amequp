@@ -8,7 +8,7 @@ class Amequp::Plugin < Adhearsion::Plugin
 
   # Configure the connection information to your AMQP instance.
   config :amequp do
-    uri         ''         , :desc => 'URI to the message queue. Use this OR specify each piece of connection information separately below.'
+    uri         nil        , :desc => 'URI to the message queue. Use this OR specify each piece of connection information separately below.'
     username    ''         , :desc => 'valid message queue username'
     password    ''         , :desc => 'valid message queue password'
     hostname    'localhost', :desc => 'host where the message queue is running'
@@ -16,38 +16,10 @@ class Amequp::Plugin < Adhearsion::Plugin
   end
 
   run :amequp, after: :punchblock do
-    new.start Adhearsion.config[:amequp]
+    new.start
   end
 
-  ##
-  # Start the Redis connection with the configured database
-  def start(config)
-    params = config.to_hash.select { |k,v| !v.nil? }
-    if params[:uri].nil? || params[:uri].empty?
-      username, password = [params[:username], params[:password]].map { |i| CGI.escape i }
-      params[:uri] = "amqp://#{username}:#{password}@#{params[:hostname]}:#{params[:port]}"
-    else
-      uri = URI.parse params[:uri]
-      params[:username] = uri.user
-      params[:password] = uri.password
-      params[:hostname] = uri.hostname
-      params[:port] = uri.port || params[:port]
-    end
-
-    establish_connection params
-  end
-
-  ##
-  # Stop the AMQP connection
-  def stop
-    EM.next_tick { EM.stop }
-  end
-
-  ##
-  # Start the connection to the configured Redis server
-  #
-  # @param params [Hash] Options to establish the Redis connection
-  def establish_connection(params)
+  def start
     latch = CountDownLatch.new 1
 
     Adhearsion::Events.shutdown do
@@ -55,12 +27,12 @@ class Amequp::Plugin < Adhearsion::Plugin
     end
 
     Adhearsion::Events.amqp_connected do
-      logger.info "Amequp connected to server at #{params[:hostname]}:#{params[:port]}"
+      logger.info "Amequp connected to server"
       latch.countdown!
     end
 
     Adhearsion::Process.important_threads << Thread.new do
-      catching_standard_errors { main_em_loop params }
+      catching_standard_errors { main_em_loop }
     end
 
     latch.wait
@@ -75,10 +47,26 @@ class Amequp::Plugin < Adhearsion::Plugin
     raise e
   end
 
-  def main_em_loop(params)
+  private
+
+  ##
+  # Stop the AMQP connection
+  def stop
+    EM.next_tick { EM.stop }
+  end
+
+  def main_em_loop
     EM.run do
-      Amequp.connection = @connection = ::AMQP.connect(params[:uri])
+      Amequp.connection = @connection = ::AMQP.connect uri
       Adhearsion::Events.trigger :amqp_connected
     end
+  end
+
+  def uri
+    config.uri || "amqp://#{config.username}:#{config.password}@#{config.hostname}:#{config.port}"
+  end
+
+  def config
+    self.class.config
   end
 end
