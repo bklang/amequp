@@ -15,7 +15,7 @@ class Amequp::Plugin < Adhearsion::Plugin
     port        5672       , :desc => 'port where the message queue is listening'
   end
 
-  init :amequp do
+  run :amequp, after: :punchblock do
     new.start Adhearsion.config[:amequp]
   end
 
